@@ -1,8 +1,8 @@
 # DataOps
 ---
 
-The goal of this project is to provide an extensible framework for reading and/or writing data, so that any two
-data sources can be linked.
+The goal of this project is to provide an extensible Java/Groovy framework for reading and/or writing data, so that
+disparate data sources can be linked.
 
 It uses convention over configuration (configuration being the fallback).
 
@@ -10,6 +10,13 @@ This library currently provides the ability to:
 
 - read Excel2013, CSV and FixedWidth files
 - write to any JDBC database connection (comes with a H2 database [OOTB](http://en.wikipedia.org/wiki/Out_of_the_box_feature))
+
+---
+
+# Distribution
+
+There are no public JARs available yet, simply because I haven't got anywhere to host them. If there's interest, I'll
+gladly publish the library (to [search.maven.org](search.maven.org)?).
 
 ---
 
@@ -68,6 +75,13 @@ Reading a CSV file from the classpath into a custom database connection/schema.
         name varchar(2048) ,
         age decimal
     )
+
+---
+
+# TODO
+
+- Build executable jar, integrated with Groovy Shell.
+- Document "How to write your own Reader/Writer" (extend AbsDataReader/AbsDataWriter and register it.)
 
 ---
 
