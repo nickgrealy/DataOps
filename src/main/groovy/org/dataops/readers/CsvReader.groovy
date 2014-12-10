@@ -26,8 +26,17 @@ class CsvReader extends AbsDataReader {
     Map<String, Class> getColumnTypes(String tableName) {
         if (!columnTypes){
             url.withInputStream {
-                List<String> firstRow = new com.opencsv.CSVReader(it.newReader()).readNext()
-                columnTypes = firstRow.collectEntries { [it, String ]}
+                // get labels and sampleData
+                def reader = new CSVReader(it.newReader())
+                List<String> labels = reader.readNext()
+                List<List<String>> sampleData = []
+                3.times { sampleData << reader.readNext() }
+                // detect data types
+                def dataTypes = detectDataTypes(sampleData)
+                columnTypes = [:]
+                for (int i = 0; i < Math.min(labels.size(), dataTypes.size()); i++) {
+                    columnTypes << [(labels[i]): dataTypes[i]]
+                }
             }
         }
         columnTypes
@@ -43,13 +52,14 @@ class CsvReader extends AbsDataReader {
     @Override
     void eachRow(String tableName, Map<String, Object> params, Closure closure) {
         CSVReader csvReader
+        int start = params.start ?: (params.labels ? 1 : 0)
         url.withInputStream { InputStream it ->
             csvReader = new CSVReader(
                     (Reader) it.newReader(),
                     (char) params.separator ?: CSVParser.DEFAULT_SEPARATOR,
                     (char) params.quotechar ?: CSVParser.DEFAULT_QUOTE_CHARACTER,
                     (char) params.escape ?: CSVParser.DEFAULT_ESCAPE_CHARACTER,
-                    (int) params.start ?: 0,
+                    start,
                     (boolean) params.strictQuotes ?: CSVParser.DEFAULT_STRICT_QUOTES,
                     (boolean) params.ignoreLeadingWhiteSpace ?: CSVParser.DEFAULT_IGNORE_LEADING_WHITESPACE
             )
@@ -57,9 +67,10 @@ class CsvReader extends AbsDataReader {
 //            if (params.start){
 //                (0..<params.start).each { if (iterator.hasNext()){ iterator.next() }}
 //            }
-            List<String> labels = params.labels ?: iterator.next()
+            Collection<String> labels = params.labels ?: iterator.next()
             List<String> row
-            while (iterator.hasNext()){
+            int count = 0
+            while (iterator.hasNext() && (!params.end || (start + count++) < params.end)){
                 row = iterator.next()
                 if (row.size() > 1 || row != ['']){
                     closure(marryDataWithLabels(labels, row))

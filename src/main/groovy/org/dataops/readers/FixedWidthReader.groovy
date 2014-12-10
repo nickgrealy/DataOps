@@ -24,11 +24,21 @@ class FixedWidthReader extends AbsDataReader {
 
     @Override
     Map<String, Class> getColumnTypes(String tableName) {
-        String headers
-        url.withReader(encoding) {
-            headers = it.readLine()
+        List<String> labels
+        Map<String, Class> columnTypes = [:]
+        url.withReader(encoding) { reader ->
+            // get labels and sampleData
+            labels = splitAndTrim(reader.readLine())
+            List<List<String>> sampleData = []
+            3.times { sampleData << splitAndTrim(reader.readLine()) }
+            // detect data types
+            def dataTypes = detectDataTypes(sampleData)
+            columnTypes = [:]
+            for (int i = 0; i < Math.min(labels.size(), dataTypes.size()); i++) {
+                columnTypes << [(labels[i]): dataTypes[i]]
+            }
         }
-        splitHeaders(headers).collectEntries { [(it): String] }
+        columnTypes
     }
 
     /**
@@ -41,20 +51,33 @@ class FixedWidthReader extends AbsDataReader {
     void eachRow(String tableName, Map<String, Object> params, Closure closure) {
         url.withReader(encoding) { reader ->
             // skip to start
-            (params.start ?: 0).times { reader.readLine() }
-            Collection<String> labels = params.labels ?: splitHeaders(reader.readLine())
+            int start = params.start ?: 0
+            start.times { reader.readLine() }
+            Collection<String> labels = params.labels ?: splitAndTrim(reader.readLine())
             String line
-            while ((line = reader.readLine()) != null) {
+            int count = 0
+            while ((line = reader.readLine()) != null && (!params.end || (start + count++) < params.end)){
                 def data = split(line, params)
                 closure(marryDataWithLabels(labels, data))
             }
         }
     }
 
-    protected List<String> splitHeaders(String row){
+    /**
+     * Splits the row AND trims.
+     * @param row
+     * @return
+     */
+    protected List<String> splitAndTrim(String row){
         split(row).collect { it.trim() }
     }
 
+    /**
+     * Splits the row based on the configured column dividers.
+     * @param row
+     * @param params
+     * @return
+     */
     protected List<String> split(String row, Map<String, Object> params = [:]) {
         def data = []
         int from = 0

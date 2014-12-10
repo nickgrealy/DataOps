@@ -5,8 +5,8 @@ package org.dataops
  */
 class TestUtils {
 
-    static URL newTmpFileUrl(content){
-        def tmp = File.createTempFile('foo','bar')
+    static URL newTmpFileUrl(content, extension = 'csv'){
+        def tmp = File.createTempFile('foo',".$extension")
         tmp.deleteOnExit()
         tmp << content
         tmp.toURI().toURL()

@@ -10,7 +10,7 @@ abstract class AbsDataWriter<DataWriterImpl extends AbsDataWriter> {
      * Reads data from the DataReader into the DataWriter.
      *
      * @param reader
-     * @param options [schemaName:'', tablesNames:[,,,]]
+     * @param options String schemaName, List<String> tablesNames, String mimeType
      * @return
      */
     abstract DataWriterImpl read(AbsDataReader reader, Map<String, Object> options)
@@ -19,7 +19,7 @@ abstract class AbsDataWriter<DataWriterImpl extends AbsDataWriter> {
      * Reads data from the DataReader into the DataWriter.
      *
      * @param reader
-     * @param options [schemaName:'', tablesNames:[,,,]]
+     * @param options String schemaName, List<String> tablesNames, String mimeType
      * @return
      */
     DataWriterImpl read(String resource, Map<String, Object> options = [:]) {

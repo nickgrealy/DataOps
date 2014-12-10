@@ -30,18 +30,19 @@ Melissa Fielding-123    -1.23   FALSE   31/12/20141:23 31/12/2014-\$1.23    123%
     /**
      * Test that data types are detected by default.
      */
-    @Ignore("Not properly implemented")
     @Test
     void testColumnTypes() {
         assert reader.getColumnTypes('table name is ignored') == [
-                Strings: java.lang.String,
-                Integers: java.lang.String,
-                Decimals: java.lang.String,
-                Booleans: java.lang.String,
-                Dates: java.lang.String,
-                Times  : java.lang.String,
-                DateTimes: java.lang.String,
-                Currencies: java.lang.String]
+                Strings: String,
+                Integers: BigDecimal,
+                Decimals: BigDecimal,
+                Booleans: Boolean,
+                Dates: Date,
+                Times  : String,
+                DateTimes: Date,
+                Currencies: String,
+                Percentages: String
+        ]
     }
 
     /**
@@ -71,9 +72,9 @@ Melissa Fielding-123    -1.23   FALSE   31/12/20141:23 31/12/2014-\$1.23    123%
     @Test
     void testConfiguration() {
         def rows = []
-        reader.eachRow('table name is ignored', [start: 2, labels: ['foobar'], trim:true]) { rows << it }
-        assert rows.size() == 2
-        assert rows == [[foobar: "John O'Grady"], [foobar: "Melissa Fielding"]]
+        reader.eachRow('table name is ignored', [start: 2, end: 3, labels: ['foobar'], trim:true]) { rows << it }
+        assert rows.size() == 1
+        assert rows == [[foobar: "John O'Grady"]]
     }
 
     /**

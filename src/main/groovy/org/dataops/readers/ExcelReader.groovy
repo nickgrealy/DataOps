@@ -8,7 +8,7 @@ class ExcelReader extends AbsDataReader {
     static final DataFormatter formatter = new DataFormatter()
     final FormulaEvaluator evaluator
     Workbook workbook
-    List<String> labels
+    Collection<String> labels
     Row row
 
     /* Constructors */
@@ -189,7 +189,7 @@ class ExcelReader extends AbsDataReader {
         closure.setDelegate(this)
 
         int count = 0
-        while (rowIterator.hasNext() && (!params.max || count++ < params.max)) {
+        while (rowIterator.hasNext() && (!params.end || (start + count++) < params.end)){
             Row row = rowIterator.next()
             closure.call(row.asMap())
         }

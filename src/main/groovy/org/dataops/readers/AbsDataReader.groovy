@@ -44,6 +44,39 @@ abstract class AbsDataReader {
         eachRow(tableName, [:], closure)
     }
 
+    /**
+     * Detects the data types for a sample set of data.
+     * @param sampleDataRows
+     * @return
+     */
+    protected List<Class> detectDataTypes(List<List<Object>> sampleDataRows){
+        List<Class> dataTypes = []
+        def rowIterator = sampleDataRows.iterator()
+        rowIterator.next().eachWithIndex { Object entry, int i ->
+            dataTypes << detectDataType(entry)
+        }
+        // TODO if there's more than one row, check them for data type consistency
+        dataTypes
+    }
+
+    /**
+     * Detects the data type for a sample data object.
+     * @param entry
+     * @return
+     */
+    protected Class detectDataType(entry){
+        if (entry == null){ return String }
+        // check current types
+        if (entry instanceof BigDecimal){ return BigDecimal }
+        if (entry instanceof Boolean){ return Boolean }
+        if (entry instanceof Date){ return Date }
+        // attempt to construct objects
+        try { new BigDecimal(entry); return BigDecimal } catch (Throwable t){}
+        try { new Date(entry); return Date } catch (Throwable t){}
+        if (['true', 'false'].contains(entry.toString().toLowerCase())){ return Boolean }
+        return String
+    }
+
     /* Abstract */
 
     /**

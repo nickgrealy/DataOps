@@ -3,41 +3,60 @@ package org.dataops.readers
 import org.dataops.utils.URLResolverUtil
 
 import java.nio.file.Files
-import java.nio.file.Path
 
 /**
  * Created by Nick Grealy on 10/12/2014.
  */
-class DataReaderFactory {
+class DataReaderFactory<DataReader extends Class<? extends AbsDataReader>> {
 
     public static final String MIMETYPE_EXCEL2013 = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                                MIMETYPE_WINCSV = 'application/vnd.ms-excel',
-                               MIMETYPE_CSV = 'text/csv'
+                               MIMETYPE_CSV = 'text/csv',
+                               MIMETYPE_FIXEDWIDTH = 'text/enriched'
 
-    /**
-     * A register of mimetypes to their associated readers.
-     */
-    public static final Map<String, Class<? extends AbsDataReader>> registeredReaders = [
-            (MIMETYPE_CSV) : CsvReader,
-            // as detected under windows
-            (MIMETYPE_WINCSV) : CsvReader,
-            (MIMETYPE_EXCEL2013) : ExcelReader,
-    ]
+    static {
+        registerReader(MIMETYPE_CSV, 'csv', CsvReader)
+        registerReader(MIMETYPE_WINCSV, 'csv', CsvReader)
+        registerReader(MIMETYPE_EXCEL2013, 'xlsx', ExcelReader)
+        registerReader(MIMETYPE_FIXEDWIDTH, 'txt', FixedWidthReader)
+    }
+
+    public static void registerReader(String mimeType, String fileExtension, DataReader readerClass){
+        fileExtension = fileExtension?.toLowerCase()
+        fileExtensionToReader.put(fileExtension, readerClass)
+        mimeTypeToReader.put(mimeType, readerClass)
+    }
+
+    protected static final Map<String, DataReader> fileExtensionToReader = [:]
+    protected static final Map<String, DataReader> mimeTypeToReader = [:]
 
     static AbsDataReader getReaderByUrlString(String resource, String mimeType = null) {
         getReader(URLResolverUtil.getURL(resource), mimeType)
     }
 
-
     static AbsDataReader getReader(URL url, String mimeType = null){
-        if (!mimeType){
-            mimeType = Files.probeContentType(new File(url.toURI()).toPath())
+        Class<? extends AbsDataReader> readerClass
+
+        // get reader by param mimeType
+        readerClass = mimeTypeToReader.get(mimeType)
+
+        // get reader by detected mimeType
+        if (readerClass == null){
+            try {
+                readerClass = mimeTypeToReader.get(Files.probeContentType(new File(url.toURI()).toPath()))
+            } catch (IllegalArgumentException t){ /* ignore 'URI scheme is not "file"' */ }
         }
-        if (!registeredReaders.containsKey(mimeType)){
-            throw new RuntimeException("No reader for mimeType='$mimeType' has been registered.")
+
+        // get reader by file extension
+        if (readerClass == null){
+            def fileExt = (url =~ /[^\.]+$/).getAt(0).toString().toLowerCase()
+            readerClass = fileExtensionToReader.get(fileExt)
         }
-        Class<? extends AbsDataReader> readerClass = registeredReaders.get(mimeType)
-        println "-> Retrieved Reader '$readerClass' by mimeType '$mimeType'"
+
+        // still no reader?...
+        if (readerClass == null){
+            throw new RuntimeException("Could not detect MimeType from file type or extension. Please specify using the 'mimeType' option (or register a custom reader!). url='$url'")
+        }
         readerClass.newInstance(url)
     }
 }

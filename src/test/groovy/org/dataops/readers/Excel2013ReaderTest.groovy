@@ -78,7 +78,7 @@ class Excel2013ReaderTest {
     @Test
     void testConfiguration() {
         def rows = []
-        reader.eachRow(WORKSHEET_DATATYPES, [start: 2, max:1, labels: ['foobar']]) { rows << it }
+        reader.eachRow(WORKSHEET_DATATYPES, [start: 2, end: 3, labels: ['foobar']]) { rows << it }
         assert rows.size() == 1
         assert rows == [[foobar: "John O'Grady"]]
     }
