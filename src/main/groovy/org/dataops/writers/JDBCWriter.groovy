@@ -63,30 +63,37 @@ class JDBCWriter extends AbsDataWriter<JDBCWriter> implements ISimpleSql {
      */
     JDBCWriter read(AbsDataReader reader, Map<String, Object> options = [:]) {
         String schemaName = options.schemaName
-        List<String> tableNames = options.tableNames ?: reader.tableNames
+        List<String> tableNames = reader.tableNames
+        if (options.tableNames){
+            if (options.tableNames instanceof List){
+                tableNames = options.tableNames
+            } else if (options.tableNames instanceof Map){
+                tableNames = tableNames.intersect(options.tableNames?.keySet() ?: tableNames)
+            }
+        }
         assert tableNames, "'tableNames' option must be supplied!"
         if (schemaName){
             schemaName = cleanDbName(schemaName)
             createSchema(schemaName, sql)
         }
         // create tables
-        tableNames.each { table ->
-            Map<String, Class> columnTypes = options.columnTypes ?: reader.getColumnTypes(table)
-            Collection<String> columnLabels = columnTypes.keySet()
+        tableNames.each { tableName ->
+            Map<String, Class> columnTypes = options.columnTypes ?: reader.getColumnTypes(tableName)
             // clean column names
             columnTypes = columnTypes.collectEntries { k,v -> [cleanDbName(k), v]}
-            table = cleanDbName(table)
-            createTable(schemaName, table, columnTypes, sql)
+            String dbTableName = options.tableNames instanceof Map ? options.tableNames[tableName] : cleanDbName(tableName)
+            createTable(schemaName, dbTableName, columnTypes, sql)
             // write data
-            def dataSetName = schemaName ? "${schemaName}.${table}" : table
+            def dataSetName = schemaName ? "${schemaName}.${dbTableName}" : dbTableName
             def dataSet = sql.dataSet(dataSetName)
             int recordCount = 0
-            reader.eachRow(table, [labels: columnLabels]) { Map<String, Object> row ->
+            reader.eachRow(tableName, [columnTypes: columnTypes]) { Map<String, Object> row ->
                 recordCount++
                 if (recordCount % 10000 == 0){
                     println "Saving record ${recordCount}..."
                 }
                 try {
+                    // Trim value, if value is string and exceeds max length...
                     row.each{ k,v -> if (v instanceof String && v.length() > MAX_COL_LENGTH){ row[k] = v.substring(0, MAX_COL_LENGTH) }}
                     dataSet.add(row)
                 } catch (Throwable t){

@@ -20,7 +20,7 @@ gladly publish the library (to [search.maven.org](search.maven.org)?).
 
 ---
 
-# Example Usage: Reading a CSV file into an inmemory database connection.
+## Example Usage: Reading a CSV file into an inmemory database connection
 
 **_test.csv_**
 
@@ -36,7 +36,7 @@ import org.dataops.writers.JDBCWriter
 
 def minAge = 29
 new JDBCWriter()
-        .read('file:/test.csv')
+        .read('/test.csv')
         .eachRow("select * from data where age > $minAge"){
     println "$it.name is $it.age years old."
 }
@@ -56,7 +56,7 @@ new JDBCWriter()
 
 ---
 
-# Example Usage: Reading a CSV file into a custom database connection/schema.
+## Example Usage: Reading a CSV file into a custom database connection/schema
 
 **_example.groovy_ (snippet)**
 
@@ -82,7 +82,7 @@ new JDBCWriter(Sql.newInstance([
 
 ---
 
-# Example Usage: Reading files from different locations.
+## Example Usage: Reading files from different locations
 
 **_example.groovy_ (snippet)**
 
@@ -98,7 +98,7 @@ db.read(new URL('http://foo/bar/test.csv'))
 
 ---
 
-# Example Usage: Using the DataOps.bat file (GroovySH).
+## Example Usage: Using the DataOps.bat file (GroovySH)
 
 **_Run bin\DataOps.bat_**
 
@@ -113,9 +113,11 @@ db.rows 'select * from data'
 # TODO
 
 - **_DONE_** - Build executable jar, integrated with Groovy Shell.
-- Ability to specify tableName mappings in options
+- Ability to configure tableName mappings in options
+- Ability to configure creation of schemas/tables
 - Document "How to write your own Reader/Writer" (extend AbsDataReader/AbsDataWriter and register it.)
-- Read html tables from web sites?
+- Test reading files from URLs (e.g. http)
+- Extend reader formats (Read html tables from web sites? Xml? Xls<2013? Other JDBC databases? etc???)
 
 ---
 

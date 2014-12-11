@@ -7,13 +7,14 @@ import org.junit.Test
 
 class CsvReaderTest {
 
+    static URL url
     static CsvReader reader
 
     @BeforeClass
     static void setUpClass() {
-        URL url = TestUtils.newTmpFileUrl """Strings,Integers,Decimals,Booleans,Dates,Times,DateTimes,Currencies,Percentages
+        url = TestUtils.newTmpFileUrl """Strings,Integers,Decimals,Booleans,Dates,Times,DateTimes,Currencies,Percentages
 Nick Man,123,1.23,TRUE,1/01/2014,12:00,1/01/2014,\$1.23,0.50%
-John O'Grady,0,0,FALSE,2/02/2014,18:00,2/02/2014,\$0
+John O'Grady,789,0,FALSE,2/02/2014,18:00,2/02/2014,\$0
 Melissa Fielding,-123,-1.23,FALSE,31/12/2014,1:23,31/12/2014,-\$1.23,123%,foo
 """
         reader = new CsvReader(url)
@@ -33,15 +34,15 @@ Melissa Fielding,-123,-1.23,FALSE,31/12/2014,1:23,31/12/2014,-\$1.23,123%,foo
     @Test
     void testColumnTypes() {
         assert reader.getColumnTypes('table name is ignored') == [
-                Strings: String,
-                Integers: BigDecimal,
-                Decimals: BigDecimal,
-                Booleans: Boolean,
-                Dates: Date,
-                Times  : String,
-                DateTimes: Date,
-                Currencies: String,
-                Percentages: String
+                Strings: java.lang.String,
+                Integers: java.math.BigDecimal,
+                Decimals: java.math.BigDecimal,
+                Booleans: java.lang.Boolean,
+                Dates: java.sql.Date,
+                Times: java.lang.String,
+                DateTimes: java.sql.Date,
+                Currencies: java.lang.String,
+                Percentages: java.lang.String
         ]
     }
 
@@ -60,11 +61,12 @@ Melissa Fielding,-123,-1.23,FALSE,31/12/2014,1:23,31/12/2014,-\$1.23,123%,foo
      * Test overriding the defaults/
      */
     @Test
-    void testConfiguration() {
+    void testEachRowConfiguration() {
         def rows = []
-        reader.eachRow('table name is ignored', [start: 2, end: 3, labels: ['foobar']]) { rows << it }
+        reader.eachRow('table name is ignored', [start: 2, end: 3, columnTypes: [aaa: String, bbb: Double]]) { rows << it }
         assert rows.size() == 1
-        assert rows == [[foobar: "John O'Grady"]]
+        assert rows.first().aaa == "John O'Grady"
+        assert rows.first().bbb == 789.0
     }
 
     /**
@@ -88,7 +90,7 @@ e0d123e5f316bef78bfdf5a008837577  OOo_2.0.1_LinuxIntel_install.tar.gz
 35d91262b3c3ec8841b54169588c97f7  OOo_2.0.1_LinuxIntel_install_wJRE.tar.gz
 
 """
-        new CsvReader(url).eachRow('table name is ignored', [start: 2, labels: ['md5', 'blank', 'filename'], separator: ' ']) {
+        new CsvReader(url).eachRow('table name is ignored', [start: 2, columnTypes: [md5: String, blank: String, filename: String], separator: ' ']) {
             rows << it
         }
         assert rows == [

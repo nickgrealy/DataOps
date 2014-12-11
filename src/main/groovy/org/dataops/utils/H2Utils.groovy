@@ -43,6 +43,7 @@ class H2Utils {
                 (Integer) : 'integer',
                 (Boolean): 'boolean',
                 (Date): 'timestamp',
+                (java.sql.Date): 'timestamp',
                 (BigDecimal) : 'decimal',
                 // primitives
                 (double) : 'decimal',
@@ -69,7 +70,7 @@ class H2Utils {
     }
 
     static def cleanDbName(name) {
-        name.replaceAll("[^\\w]", "_").toLowerCase()
+        name.replaceAll("[^\\w]", "_")
     }
 
     /**

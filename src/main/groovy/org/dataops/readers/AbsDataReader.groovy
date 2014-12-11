@@ -2,6 +2,8 @@ package org.dataops.readers
 
 import org.dataops.utils.URLResolverUtil
 
+import java.text.DateFormat
+
 abstract class AbsDataReader {
 
     URL url
@@ -22,8 +24,41 @@ abstract class AbsDataReader {
         this.url = url
     }
 
-    protected Map marryDataWithLabels(Collection<String> labels, List<Object> data){
+    /**
+     * Marries up a List of labels, with a List of data, to create a Map<String, Object> of data.
+     * @param labels
+     * @param data
+     * @return
+     */
+    protected Map<String, Object> marryDataWithLabels(Collection<String> labels, List<Object> data){
         (0..<Math.min(labels.size(), data.size())).collectEntries { [labels[it], data[it]] }
+    }
+
+    /**
+     * Attempts to ensure or values of the dataMap, match the intended class type as specified by the columnTypes.
+     * @param columnTypes
+     * @param dataMap
+     * @return
+     */
+    protected Map<String, Object> doDataTypeConversionIfRequired(Map<String, Class> columnTypes, Map<String, Object> dataMap){
+        return dataMap.collectEntries { k,v ->
+            def targetDataType = columnTypes[k]
+            if (v != null && !targetDataType.isAssignableFrom(v.class)){
+                // attempt implicit data conversion
+                try { return [k, targetDataType.newInstance(v)] } catch (Throwable t){}
+                try { return [k, targetDataType.newInstance(v.toString())] } catch (Throwable t){}
+                // attempt explicit data conversion
+                if (java.sql.Date.class.isAssignableFrom(targetDataType)){
+                    def date = v
+                    if (!(v instanceof Date)){
+                        date = localeDateFormat.parse(v.toString())
+                    }
+                    return [k, new java.sql.Date(date.getTime())]
+                }
+            }
+            // else just return it and hope for the best!?
+            return [k, v]
+        }
     }
 
     /**
@@ -59,6 +94,8 @@ abstract class AbsDataReader {
         dataTypes
     }
 
+    static def localeDateFormat = DateFormat.getDateInstance(DateFormat.SHORT)
+
     /**
      * Detects the data type for a sample data object.
      * @param entry
@@ -69,10 +106,12 @@ abstract class AbsDataReader {
         // check current types
         if (entry instanceof BigDecimal){ return BigDecimal }
         if (entry instanceof Boolean){ return Boolean }
-        if (entry instanceof Date){ return Date }
+        if (entry instanceof java.sql.Date){ return java.sql.Date }
+        if (entry instanceof java.util.Date){ return java.sql.Date }
         // attempt to construct objects
         try { new BigDecimal(entry); return BigDecimal } catch (Throwable t){}
-        try { new Date(entry); return Date } catch (Throwable t){}
+        try { new java.sql.Date(entry); return java.sql.Date } catch (Throwable t){}
+        try { localeDateFormat.parse(entry); return java.sql.Date } catch (Throwable t){}
         if (['true', 'false'].contains(entry.toString().toLowerCase())){ return Boolean }
         return String
     }

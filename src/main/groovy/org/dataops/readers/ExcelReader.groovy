@@ -6,7 +6,6 @@ import org.codehaus.groovy.runtime.NullObject
 class ExcelReader extends AbsDataReader {
 
     static final DataFormatter formatter = new DataFormatter()
-    final FormulaEvaluator evaluator
     Workbook workbook
     Collection<String> labels
     Row row
@@ -22,7 +21,6 @@ class ExcelReader extends AbsDataReader {
         url.withInputStream { InputStream it ->
             this.workbook = WorkbookFactory.create(it)
         }
-        evaluator = workbook.getCreationHelper().createFormulaEvaluator()
         initMeta()
     }
 
@@ -80,6 +78,7 @@ class ExcelReader extends AbsDataReader {
     }
 
     def getCellValue(Cell cell, Class targetType = null) {
+        FormulaEvaluator evaluator = cell.getSheet().getWorkbook().getCreationHelper().createFormulaEvaluator()
         if (!cell) {
             return null
         }
@@ -180,18 +179,21 @@ class ExcelReader extends AbsDataReader {
 
     @Override
     void eachRow(String tableName, Map<String, Object> params, Closure closure) {
-        def start = params.start ?: 0
+        int start = params.start ?: (params.columnTypes ? 1 : 0)
         def sheet = getWorkSheet(tableName)
         Iterator<Row> rowIterator = sheet.rowIterator()
 
-        labels = params.labels ?: getHeaders(tableName, start++)
+        labels = params.columnTypes?.keySet() ?: getHeaders(tableName, start++)
         start.times { rowIterator.next() }
         closure.setDelegate(this)
 
         int count = 0
         while (rowIterator.hasNext() && (!params.end || (start + count++) < params.end)){
-            Row row = rowIterator.next()
-            closure.call(row.asMap())
+            def dataMap = rowIterator.next().asMap()
+            if (params.columnTypes){
+                dataMap = doDataTypeConversionIfRequired(params.columnTypes, dataMap)
+            }
+            closure(dataMap)
         }
     }
 

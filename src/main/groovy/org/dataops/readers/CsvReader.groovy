@@ -52,7 +52,7 @@ class CsvReader extends AbsDataReader {
     @Override
     void eachRow(String tableName, Map<String, Object> params, Closure closure) {
         CSVReader csvReader
-        int start = params.start ?: (params.labels ? 1 : 0)
+        int start = params.start ?: (params.columnTypes ? 1 : 0)
         url.withInputStream { InputStream it ->
             csvReader = new CSVReader(
                     (Reader) it.newReader(),
@@ -64,16 +64,17 @@ class CsvReader extends AbsDataReader {
                     (boolean) params.ignoreLeadingWhiteSpace ?: CSVParser.DEFAULT_IGNORE_LEADING_WHITESPACE
             )
             def iterator = csvReader.iterator()
-//            if (params.start){
-//                (0..<params.start).each { if (iterator.hasNext()){ iterator.next() }}
-//            }
-            Collection<String> labels = params.labels ?: iterator.next()
+            Collection<String> labels = params.columnTypes?.keySet() ?: iterator.next()
             List<String> row
             int count = 0
             while (iterator.hasNext() && (!params.end || (start + count++) < params.end)){
                 row = iterator.next()
                 if (row.size() > 1 || row != ['']){
-                    closure(marryDataWithLabels(labels, row))
+                    def dataMap = marryDataWithLabels(labels, row)
+                    if (params.columnTypes){
+                        dataMap = doDataTypeConversionIfRequired(params.columnTypes, dataMap)
+                    }
+                    closure(dataMap)
                 }
             }
         }

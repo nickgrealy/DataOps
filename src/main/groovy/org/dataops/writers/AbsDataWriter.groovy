@@ -32,7 +32,7 @@ abstract class AbsDataWriter<DataWriterImpl extends AbsDataWriter> {
      * Reads data from the DataReader into the DataWriter.
      *
      * @param reader
-     * @param options String schemaName, List<String> tablesNames, String mimeType
+     * @param options String schemaName, List/Map tablesNames, String mimeType
      * @return
      */
     DataWriterImpl read(URL url, Map<String, Object> options = [:]) {

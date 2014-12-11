@@ -3,15 +3,18 @@ package org.dataops.utils
 class URLResolverUtilTest extends GroovyTestCase {
 
 
-    public static final String CLASSPATH_RESOURCE = 'classpath:///Excel2013/No Security.xlsx'
+
+    static URL getExcelClasspath(){
+        URLResolverUtil.getURL('classpath:///Excel2013/No Security.xlsx')
+    }
 
     void testGetFileResource() {
-        def absPath = new File(URLResolverUtil.getURL(CLASSPATH_RESOURCE).toURI()).absolutePath
+        def absPath = new File(getExcelClasspath().toURI()).absolutePath
         URLResolverUtil.getURL("file:/$absPath")
     }
 
     void testGetClasspathResource() {
-        assert URLResolverUtil.getURL(CLASSPATH_RESOURCE)
+        assert getExcelClasspath()
     }
 
     void testGetResource_MissingFile() {
