@@ -33,14 +33,16 @@ Reading in a CSV file into an inmemory database connection.
 
 **_example.groovy_**
 
-    import org.dataops.writers.JDBCWriter
+```Groovy
+import org.dataops.writers.JDBCWriter
 
-    def minAge = 29
-    new JDBCWriter()
-            .read('file:/test.csv')
-            .eachRow("select * from data where age > $minAge"){
-        println "$it.name is $it.age years old."
-    }
+def minAge = 29
+new JDBCWriter()
+        .read('file:/test.csv')
+        .eachRow("select * from data where age > $minAge"){
+    println "$it.name is $it.age years old."
+}
+```
 
 **_console output_**
 
@@ -62,11 +64,13 @@ Reading a CSV file from the classpath into a custom database connection/schema.
 
 **_example.groovy_ (snippet)**
 
-    new JDBCWriter(Sql.newInstance([url: 'jdbc:h2:mem:foobar', user: 'sa', password: 'sa', driver: 'org.h2.Driver']))
-            .read('classpath:///test.csv', [schemaName: 'csv', mimeType: DataReaderFactory.MIMETYPE_CSV])
-            .eachRow("select * from csv.data where age > $minAge"){
-        // do something
-    }
+```Groovy
+new JDBCWriter(Sql.newInstance([url: 'jdbc:h2:mem:foobar', user: 'sa', password: 'sa', driver: 'org.h2.Driver']))
+        .read('classpath:///test.csv', [schemaName: 'csv', mimeType: DataReaderFactory.MIMETYPE_CSV])
+        .eachRow("select * from csv.data where age > $minAge"){
+    // do something
+}
+```
 
 **_console err_**
 
