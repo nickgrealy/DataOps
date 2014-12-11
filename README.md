@@ -100,7 +100,7 @@ db.read(new URL('http://foo/bar/test.csv'))
 
 # Example Usage: Using the DataOps.bat file (GroovySH).
 
-** Run bin\DataOps.bat **
+**_Run bin\DataOps.bat_**
 
 ```Groovy
 db = new JDBCWriter()
@@ -112,7 +112,7 @@ db.rows 'select * from data'
 
 # TODO
 
-- DONE - Build executable jar, integrated with Groovy Shell.
+- **_DONE_** - Build executable jar, integrated with Groovy Shell.
 - Ability to specify tableName mappings in options
 - Document "How to write your own Reader/Writer" (extend AbsDataReader/AbsDataWriter and register it.)
 - Read html tables from web sites?
