@@ -66,9 +66,7 @@ new JDBCWriter(Sql.newInstance([
                 user: 'sa',
                 password: 'sa',
                 driver: 'org.h2.Driver']))
-        .read(/test.txt', [
-                schemaName: 'csv',
-                mimeType: DataReaderFactory.MIMETYPE_CSV])
+        .read('/test.txt', [schemaName: 'csv'])
         .eachRow("select * from csv.data where age > $minAge"){
         // do something
 }
@@ -114,7 +112,8 @@ db.rows 'select * from data'
 
 # TODO
 
-- Build executable jar, integrated with Groovy Shell.
+- DONE - Build executable jar, integrated with Groovy Shell.
+- Ability to specify tableName mappings in options
 - Document "How to write your own Reader/Writer" (extend AbsDataReader/AbsDataWriter and register it.)
 - Read html tables from web sites?
 
