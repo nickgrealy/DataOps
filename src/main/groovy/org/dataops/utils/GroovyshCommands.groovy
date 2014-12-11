@@ -1,8 +1,15 @@
-import static Cmd.*
+package org.dataops.utils
 
-class Cmd {
+/**
+ * Static import commands, that can be run from the console.
+ */
+class GroovyshCommands {
 
     static int exec(command){
+        execute(command)
+    }
+
+    static int execute(command){
         Process proc = command.execute()                 // Call *execute* on the string
         proc.waitFor()                               // Wait for the command to finish
         println "stderr: ${proc.err.text}"
@@ -10,7 +17,4 @@ class Cmd {
         proc.exitValue()
     }
 
-    public static void main(String[] args) {
-        exec 'ls'
-    }
 }

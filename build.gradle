@@ -5,29 +5,21 @@ apply plugin:'application'
 
 group = 'org.dataops'
 archivesBaseName = 'DataOps'
-version = '1.4'
+version = '1.4.1'
 sourceCompatibility = 1.6
-//mainClassName = 'org.codehaus.groovy.tools.shell.Main'
+mainClassName = 'org.dataops.Main'
 
 repositories {
     mavenCentral()
-    ivy {
-        name "ivyRepo"
-        url "ivyRepo"
-        layout "maven"
-    }
 }
 
-uploadArchives {
-    repositories {
-        add project.repositories.ivyRepo
-    }
+ext {
+    applicationProperties = file("${project.buildDir}/tmp/app.properties")
 }
 
 dependencies {
     compile 'org.codehaus.groovy:groovy-all:2.3.7'
-    // excel
-    compile('org.apache.poi:poi-ooxml:3.10.1') {
+    compile('org.apache.poi:poi-ooxml:3.10.1') { // excel
         exclude(group: 'xml-apis', module: 'xml-apis')
     }
     compile('xerces:xercesImpl:2.9.1') {
@@ -36,21 +28,23 @@ dependencies {
     }
     compile 'com.opencsv:opencsv:3.1' // csv
     compile 'com.h2database:h2:1.4.182' // db
-
-    // groovysh
-//    runtime("jline:jline:2.11") {
-//        exclude(group: 'junit', module: 'junit')
-//    }
-//    runtime('commons-cli:commons-cli:1.2')
-//
-//    // soap
-//    compile 'com.github.groovy-wslite:groovy-wslite:1.0.1'
+    compile("jline:jline:2.11") { // groovysh
+        exclude(group: 'junit', module: 'junit')
+    }
+    compile('commons-cli:commons-cli:1.2')
 
     testCompile 'junit:junit:4.11' // groovytestcase
 }
 
 clean.doLast {
     ant.delete(includeemptydirs: true) { fileset(dir: '.', excludes: 'gradle.properties,build.gradle,src/**,.gradle/**') }
+}
+
+jar {
+    applicationProperties.parentFile.mkdirs()
+    applicationProperties.delete()
+    applicationProperties << "version=$version"
+    from applicationProperties
 }
 
 distZip.doLast {

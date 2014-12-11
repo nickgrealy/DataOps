@@ -20,9 +20,7 @@ gladly publish the library (to [search.maven.org](search.maven.org)?).
 
 ---
 
-# Example Usage 1
-
-Reading in a CSV file into an inmemory database connection.
+# Example Usage: Reading a CSV file into an inmemory database connection.
 
 **_test.csv_**
 
@@ -58,17 +56,21 @@ new JDBCWriter()
 
 ---
 
-# Example Usage 2
-
-Reading a CSV file from the classpath into a custom database connection/schema.
+# Example Usage: Reading a CSV file into a custom database connection/schema.
 
 **_example.groovy_ (snippet)**
 
 ```Groovy
-new JDBCWriter(Sql.newInstance([url: 'jdbc:h2:mem:foobar', user: 'sa', password: 'sa', driver: 'org.h2.Driver']))
-        .read('classpath:///test.csv', [schemaName: 'csv', mimeType: DataReaderFactory.MIMETYPE_CSV])
+new JDBCWriter(Sql.newInstance([
+                url: 'jdbc:h2:mem:foobar',
+                user: 'sa',
+                password: 'sa',
+                driver: 'org.h2.Driver']))
+        .read(/test.txt', [
+                schemaName: 'csv',
+                mimeType: DataReaderFactory.MIMETYPE_CSV])
         .eachRow("select * from csv.data where age > $minAge"){
-    // do something
+        // do something
 }
 ```
 
@@ -82,10 +84,39 @@ new JDBCWriter(Sql.newInstance([url: 'jdbc:h2:mem:foobar', user: 'sa', password:
 
 ---
 
+# Example Usage: Reading files from different locations.
+
+**_example.groovy_ (snippet)**
+
+```Groovy
+def db = new JDBCWriter()
+db.read('/test.csv')                // read from system
+db.read('file:/test.csv')           // read from system (using url syntax)
+db.read('classpath:///test.csv')    // read from classpath (using url syntax)
+db.read('http://foo/bar/test.csv')  // read from http
+// or you can just use a URL
+db.read(new URL('http://foo/bar/test.csv'))
+```
+
+---
+
+# Example Usage: Using the DataOps.bat file (GroovySH).
+
+** Run bin\DataOps.bat **
+
+```Groovy
+db = new JDBCWriter()
+db.read '/test.csv'
+db.rows 'select * from data'
+```
+
+---
+
 # TODO
 
 - Build executable jar, integrated with Groovy Shell.
 - Document "How to write your own Reader/Writer" (extend AbsDataReader/AbsDataWriter and register it.)
+- Read html tables from web sites?
 
 ---
 
