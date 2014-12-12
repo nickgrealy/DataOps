@@ -61,11 +61,7 @@ new JDBCWriter()
 **_example.groovy_ (snippet)**
 
 ```Groovy
-new JDBCWriter(Sql.newInstance([
-                url: 'jdbc:h2:mem:foobar',
-                user: 'sa',
-                password: 'sa',
-                driver: 'org.h2.Driver']))
+new JDBCWriter(Sql.newInstance('jdbc:h2:mem:test'))
         .read('/test.txt', [schemaName: 'csv'])
         .eachRow("select * from csv.data where age > $minAge"){
         // do something
@@ -110,6 +106,23 @@ db.rows 'select * from data'
 
 ---
 
+## Example Usage: Different JDBC Connection strings.
+
+DataOps comes with H2, MySQL and PostgreSQL drivers OOTB. Below are some examples on how to connect to them:
+
+```Groovy
+new JDBCWriter(Sql.newInstance('jdbc:h2:mem:test'))
+new JDBCWriter(Sql.newInstance('jdbc:h2:file:/test'))
+new JDBCWriter(Sql.newInstance('jdbc:postgresql://localhost:5432/test?user=postgres&password=password'))
+new JDBCWriter(Sql.newInstance([
+       url: 'jdbc:h2:mem:foobar',
+       user: 'sa',
+       password: 'sa',
+       driver: 'org.h2.Driver']))
+```
+
+---
+
 # TODO
 
 - **_DONE_** - Build executable jar, integrated with Groovy Shell.
@@ -118,6 +131,7 @@ db.rows 'select * from data'
 - Document "How to write your own Reader/Writer" (extend AbsDataReader/AbsDataWriter and register it.)
 - Test reading files from URLs (e.g. http)
 - Extend reader formats (Read html tables from web sites? Xml? Xls<2013? Other JDBC databases? etc???)
+- Introduce batch mode (pipe data into a table from command line)
 
 ---
 

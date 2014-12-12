@@ -6,6 +6,8 @@ import org.dataops.readers.AbsDataReader
 import org.dataops.utils.ISimpleSql
 import org.dataops.utils.SimpleSql
 
+import java.sql.SQLException
+
 import static org.dataops.utils.H2Utils.*
 
 @Log
@@ -13,38 +15,34 @@ class JDBCWriter extends AbsDataWriter<JDBCWriter> implements ISimpleSql {
 
     Sql sql
     SimpleSql simpleSql
+    Properties properties = new Properties(
+//            [
+//            schemaName: null, // String
+//            tableNames: null, // List/Map
+//            columnTypes: null // Map
+//    ]
+    )
 
-    /* Constructors - Default Sql connection */
+    /* Constructors */
 
     JDBCWriter() {
         Class.forName('org.h2.Driver')
         setSql Sql.newInstance([url: 'jdbc:h2:mem:db1', user: 'sa', password: 'sa', driver: 'org.h2.Driver'])
     }
 
-    JDBCWriter(String resource, Map<String, Object> options = [:]) {
-        this()
-        read(resource, options)
+    JDBCWriter(Sql sqlConnection){
+        setSql sqlConnection
     }
 
-    JDBCWriter(URL url, Map<String, Object> options = [:]) {
-        this()
-        read(url, options)
+    JDBCWriter(String sqlConnection){
+        setSql Sql.newInstance(sqlConnection)
     }
 
-    /* Constructors - Sql connection supplied */
+    /* Methods */
 
-    JDBCWriter(Sql sql){
-        setSql sql
-    }
-
-    JDBCWriter(Sql sql, String resource, Map<String, Object> options = [:]) {
-        this(sql)
-        read(resource, options)
-    }
-
-    JDBCWriter(Sql sql, URL url, Map<String, Object> options = [:]) {
-        this(sql)
-        read(url, options)
+    JDBCWriter configure(Map<String, Object> options){
+        properties.putAll(options)
+        this
     }
 
     void setSql(Sql sql) {
@@ -61,28 +59,37 @@ class JDBCWriter extends AbsDataWriter<JDBCWriter> implements ISimpleSql {
      * @param options String schemaName, List<String> tableNames, Map<String, Class> columnTypes
      * @return
      */
-    JDBCWriter read(AbsDataReader reader, Map<String, Object> options = [:]) {
-        String schemaName = options.schemaName
+    JDBCWriter read(AbsDataReader reader, Map<String, Object> optionsx = [:]) {
+        properties.putAll(optionsx)
+        String schemaName = properties.schemaName
         List<String> tableNames = reader.tableNames
-        if (options.tableNames){
-            if (options.tableNames instanceof List){
-                tableNames = options.tableNames
-            } else if (options.tableNames instanceof Map){
-                tableNames = tableNames.intersect(options.tableNames?.keySet() ?: tableNames)
+        if (properties.tableNames){
+            if (properties.tableNames instanceof List){
+                tableNames = properties.tableNames
+            } else if (properties.tableNames instanceof Map){
+                tableNames = tableNames.intersect(properties.tableNames?.keySet() ?: tableNames)
             }
         }
         assert tableNames, "'tableNames' option must be supplied!"
         if (schemaName){
             schemaName = cleanDbName(schemaName)
-            createSchema(schemaName, sql)
+            try {
+                createSchema(schemaName, sql)
+            } catch (SQLException e){
+                println "Caught exception creating schema: $e.message"
+            }
         }
         // create tables
         tableNames.each { tableName ->
-            Map<String, Class> columnTypes = options.columnTypes ?: reader.getColumnTypes(tableName)
+            Map<String, Class> columnTypes = properties.columnTypes ?: reader.getColumnTypes(tableName)
             // clean column names
             columnTypes = columnTypes.collectEntries { k,v -> [cleanDbName(k), v]}
-            String dbTableName = options.tableNames instanceof Map ? options.tableNames[tableName] : cleanDbName(tableName)
-            createTable(schemaName, dbTableName, columnTypes, sql)
+            String dbTableName = properties.tableNames instanceof Map ? properties.tableNames[tableName] : cleanDbName(tableName)
+            try {
+                createTable(schemaName, dbTableName, columnTypes, sql)
+            } catch (SQLException e){
+                println "Caught exception creating table: $e.message"
+            }
             // write data
             def dataSetName = schemaName ? "${schemaName}.${dbTableName}" : dbTableName
             def dataSet = sql.dataSet(dataSetName)

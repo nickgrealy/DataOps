@@ -5,8 +5,11 @@ package org.dataops.readers
  */
 class FixedWidthReader extends AbsDataReader {
 
-    List<Integer> columnDividers = []
-    String encoding = 'UTF-8'
+    Properties properties = new Properties([
+            encoding: 'UTF-8',
+            columnDividers: [],
+            columnTypes: (0..99).collect{"column_$it"}
+    ])
 
     FixedWidthReader(String resource) {
         super(resource)
@@ -16,52 +19,78 @@ class FixedWidthReader extends AbsDataReader {
         super(url)
     }
 
-    FixedWidthReader configure(List<Integer> columnDividers, String encoding = 'UTF-8') {
-        this.columnDividers = columnDividers
-        this.encoding = encoding
+    FixedWidthReader configure(Map<String, Object> options) {
+        properties.putAll(options)
         this
     }
 
     @Override
     Map<String, Class> getColumnTypes(String tableName) {
-        List<String> labels
-        Map<String, Class> columnTypes = [:]
-        url.withReader(encoding) { reader ->
-            // get labels and sampleData
-            labels = splitAndTrim(reader.readLine())
-            List<List<String>> sampleData = []
-            3.times { sampleData << splitAndTrim(reader.readLine()) }
-            // detect data types
-            def dataTypes = detectDataTypes(sampleData)
-            columnTypes = [:]
-            for (int i = 0; i < Math.min(labels.size(), dataTypes.size()); i++) {
-                columnTypes << [(labels[i]): dataTypes[i]]
+        if (properties.columnTypes instanceof List){
+            return properties.columnTypes.collectEntries{ [it, String] }
+        } else if (properties.columnTypes instanceof Map){
+            return properties.columnTypes
+        } else {
+            Map<String, Class> columnTypes = [:]
+            url.withReader(properties.encoding) { reader ->
+                // get labels and sampleData
+                List<String> labels = splitAndTrim(reader.readLine())
+                List<List<String>> sampleData = []
+                3.times { sampleData << splitAndTrim(reader.readLine()) }
+                // detect data types
+                def dataTypes = detectDataTypes(sampleData)
+                columnTypes = [:]
+                for (int i = 0; i < Math.min(labels.size(), dataTypes.size()); i++) {
+                    columnTypes << [(labels[i]): dataTypes[i]]
+                }
             }
+            return columnTypes
         }
-        columnTypes
     }
 
     /**
      *
      * @param tableName
-     * @param params boolean trim
+     * @param options boolean trim
      * @param closure
      */
     @Override
-    void eachRow(String tableName, Map<String, Object> params, Closure closure) {
-        url.withReader(encoding) { reader ->
+    void eachRow(String tableName, Map<String, Object> options, Closure closure) {
+        properties.putAll(options)
+        url.withReader(properties.encoding) { reader ->
             // skip to start
-            int start = params.start ?: (params.columnTypes ? 1 : 0)
+            int start = properties.start ?: (properties.columnTypes ? 1 : 0)
             start.times { reader.readLine() }
-            Collection<String> labels = params.columnTypes?.keySet() ?: splitAndTrim(reader.readLine())
+            Collection<String> labels = properties.columnTypes?.keySet() ?: splitAndTrim(reader.readLine())
             String line
             int count = 0
-            while ((line = reader.readLine()) != null && (!params.end || (start + count++) < params.end)){
-                def data = split(line, params)
+            while ((line = reader.readLine()) != null && (!properties.end || (start + count++) < properties.end)){
+                def data = split(line)
                 def dataMap = marryDataWithLabels(labels, data)
-                if (params.columnTypes){
-                    dataMap = doDataTypeConversionIfRequired(params.columnTypes, dataMap)
+                if (properties.columnTypes){
+                    dataMap = doDataTypeConversionIfRequired(properties.columnTypes, dataMap)
                 }
+                closure(dataMap)
+            }
+        }
+    }
+
+
+    void eachRow(String tableName,
+                 Integer start,
+                 Integer end,
+                 Collection<String> labels,
+                 Map<String, Class> columnTypes,
+                 Closure closure) {
+
+        url.withReader(properties.encoding) { reader ->
+            start.times { reader.readLine() }
+            labels = labels ?: splitAndTrim(reader.readLine())
+            String line
+            int count = 0
+            while ((line = reader.readLine()) != null && (!end || (start + count++) < end)){
+                def dataMap = marryDataWithLabels(labels, split(line))
+                dataMap = doDataTypeConversionIfRequired(columnTypes, dataMap)
                 closure(dataMap)
             }
         }
@@ -79,29 +108,30 @@ class FixedWidthReader extends AbsDataReader {
     /**
      * Splits the row based on the configured column dividers.
      * @param row
-     * @param params
+     * @param options
      * @return
      */
-    protected List<String> split(String row, Map<String, Object> params = [:]) {
+    protected List<String> split(String row) {
+        properties.putAll(properties)
         def data = []
         int from = 0
-        if (columnDividers.isEmpty()) {
+        if (properties.columnDividers.isEmpty()) {
             data << row
         } else {
-            for (int i = 0; i < columnDividers.size(); i++) {
-                int to = columnDividers[i]
+            for (int i = 0; i < properties.columnDividers.size(); i++) {
+                int to = properties.columnDividers[i]
                 if (to < row.length()) {
                     String record = row.substring(from, to)
-                    data << (params.trim ? record.trim() : record)
+                    data << (properties.trim ? record.trim() : record)
                     from = to
                 } else {
                     break
                 }
             }
         }
-        if (from < (row.length()-1)){
+        if (from < row.length()){
             String record = row.substring(from)
-            data << (params.trim ? record.trim() : record)
+            data << (properties.trim ? record.trim() : record)
         }
         data
     }

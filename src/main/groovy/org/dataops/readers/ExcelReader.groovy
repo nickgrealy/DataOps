@@ -165,7 +165,14 @@ class ExcelReader extends AbsDataReader {
         def sampleData
         eachRow(tablename, [end: 5]) { Map<String, Object> row ->
             def columnToValueMap = row //.asMap()
-            def tmp = columnToValueMap.collectEntries { [it.key, it.value.getClass()] }
+            def tmp = columnToValueMap.collectEntries {
+                // get column -> class mapping
+                def clazz = it.value.getClass()
+                if (Date.isAssignableFrom(clazz)){
+                    clazz = java.sql.Date
+                }
+                [it.key, clazz]
+            }
             if (sampleData) {
                 tmp.each { k, v ->
                     sampleData[k] = lcdDataTypes(sampleData[k], v)

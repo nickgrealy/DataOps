@@ -1,6 +1,7 @@
 package org.dataops.readers
 
 import org.dataops.TestUtils
+import org.dataops.writers.JDBCWriter
 import org.junit.BeforeClass
 import org.junit.Ignore
 import org.junit.Test
@@ -82,15 +83,18 @@ Melissa Fielding,-123,-1.23,FALSE,31/12/2014,1:23,31/12/2014,-\$1.23,123%,foo
      * Test reading different formats.
      */
     @Test
-    void testCornerCases() {
+    void testFilesWithNoHeaders() {
         def rows = []
         URL url = TestUtils.newTmpFileUrl """Application Binaries
 
-e0d123e5f316bef78bfdf5a008837577  OOo_2.0.1_LinuxIntel_install.tar.gz
-35d91262b3c3ec8841b54169588c97f7  OOo_2.0.1_LinuxIntel_install_wJRE.tar.gz
+aaa|bbb
+ccc|ddd
 
 """
-        new CsvReader(url).eachRow('table name is ignored', [start: 2, columnTypes: [md5: String, blank: String, filename: String], separator: ' ']) {
+        new CsvReader(url).eachRow('table name is ignored', [
+                start: 2,
+                columnTypes: [md5: String, blank: String, filename: String],
+                separator: '|']) {
             rows << it
         }
         assert rows == [
@@ -98,4 +102,5 @@ e0d123e5f316bef78bfdf5a008837577  OOo_2.0.1_LinuxIntel_install.tar.gz
                 [md5: '35d91262b3c3ec8841b54169588c97f7', blank: '', filename: 'OOo_2.0.1_LinuxIntel_install_wJRE.tar.gz']
         ]
     }
+
 }

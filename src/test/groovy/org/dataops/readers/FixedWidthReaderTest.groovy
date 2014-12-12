@@ -1,6 +1,8 @@
 package org.dataops.readers
 
+import groovy.sql.GroovyRowResult
 import org.dataops.TestUtils
+import org.dataops.writers.JDBCWriter
 import org.junit.BeforeClass
 import org.junit.Ignore
 import org.junit.Test
@@ -16,7 +18,7 @@ Nick Man        123       1.23      TRUE1/01/2014 12:001/01/2014 \$1.23     0.50
 John O'Grady    789     0       FALSE   2/02/2014 18:002/02/2014 \$0
 Melissa Fielding-123    -1.23   FALSE   31/12/20141:23 31/12/2014-\$1.23    123%
 """
-        reader = new FixedWidthReader(url).configure([16,24,32,40,50,55,65,75])
+        reader = new FixedWidthReader(url).configure([columnDividers: [16,24,32,40,50,55,65,75]])
     }
 
     /**
@@ -85,6 +87,21 @@ Melissa Fielding-123    -1.23   FALSE   31/12/20141:23 31/12/2014-\$1.23    123%
     void testMultipleReadThroughs() {
         testDefaultReader()
         testDefaultReader()
+    }
+
+    @Test
+    void testFilesWithNoHeaders(){
+        URL url = TestUtils.newTmpFileUrl """
+
+  1 2
+ 3 4
+
+5    6
+"""
+        def reader = new FixedWidthReader(url).configure([start:2, end:4, columnDividers: [3], columnTypes: ['aaa','bbb'], trim: true])
+        def data = reader.collect('ignored table')
+        println data
+        assert data.size() == 2
     }
 
 }

@@ -41,6 +41,9 @@ abstract class AbsDataReader {
      * @return
      */
     protected Map<String, Object> doDataTypeConversionIfRequired(Map<String, Class> columnTypes, Map<String, Object> dataMap){
+        if (!columnTypes){
+            return dataMap
+        }
         return dataMap.collectEntries { k,v ->
             def targetDataType = columnTypes[k]
             if (v != null && !targetDataType.isAssignableFrom(v.class)){
@@ -114,6 +117,12 @@ abstract class AbsDataReader {
         try { localeDateFormat.parse(entry); return java.sql.Date } catch (Throwable t){}
         if (['true', 'false'].contains(entry.toString().toLowerCase())){ return Boolean }
         return String
+    }
+
+    Collection collect(String tableName, Map<String, Object> params = [:], Closure closure = {}){
+        def list = []
+        eachRow(tableName, params){ list << it }
+        list.collect(closure)
     }
 
     /* Abstract */
