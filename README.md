@@ -143,3 +143,6 @@ We make use of:
 - [OpenCSV](http://opencsv.sourceforge.net/) - for parsing CSV files
 
 ---
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/nickgrealy/dataops/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
